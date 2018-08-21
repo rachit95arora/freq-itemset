@@ -3,8 +3,9 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-
+#include <vector>
 using namespace std;
+typedef pair< vector<int>, int> candidate;
 class ReadTransaction
 {
 private:
@@ -51,6 +52,37 @@ public:
                             (min(current_position, next_line.size())-last_position + 1)
                             )));
             return next_line.size();
+        }
+    }
+};
+
+class WriteFrequentItems {
+private:
+    ofstream m_outfile;
+public:
+    WriteFrequentItems(string filepath)
+    {
+        m_outfile.open(filepath);
+        if (!m_outfile)
+        {
+            cerr<< "[ERROR] WriteFrequentItems() : Output file " + filepath + " could not be opened!\n";
+            exit(1);
+        }
+    }
+
+    ~WriteFrequentItems()
+    {
+        m_outfile.close();
+    }
+    void printItems(vector<candidate> &freq_items)
+    {
+        for(auto item : freq_items)
+        {
+            for(int i = 0 ; i<(item.first).size()-1; i++)
+            {
+                m_outfile<<(item.first)[i]<<' ';
+            }
+            m_outfile<<(item.first)[(item.first).size()-1]<<endl;
         }
     }
 };

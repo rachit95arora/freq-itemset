@@ -2,18 +2,22 @@
 #define APRIORI_HANDLER_H
 
 #include <string>
+#include <vector>
 #include <iostream>
 #include <unordered_set>
 using namespace std;
 
 #include "ReadTransaction.h"
-typedef pair< vector<int>, int> candidate;
 class AprioriHandler {
 private:
     string m_input_filename, m_output_filename;
     double m_min_support;
     int m_total_transactions;
     vector<vector<candidate>> m_cand_lists, m_freq_lists;
+
+    void generateCandidates(int index);
+    void initPass();
+    void getFrequentFromCandidate(int index);
 public:
 
     AprioriHandler(string input_file, string output_file, double min_support)
@@ -27,9 +31,6 @@ public:
     }
 
     void generateFrequentItemSet();
-    void generateCandidates(int index);
-    void initPass();
-    void getFrequentFromCandidate(int index);
 };
 
 void AprioriHandler::generateFrequentItemSet()
@@ -43,7 +44,7 @@ void AprioriHandler::generateFrequentItemSet()
         vector<int> next_transaction;
         while(read_helper->nextTransaction(next_transaction) > 0)
         {
-            for(candidate current : m_cand_lists[index])
+            for(candidate current : (m_cand_lists[k]))
             {
                 bool current_present = true;
                 vector<int> candidate_vector = current.first;
@@ -75,6 +76,12 @@ void AprioriHandler::generateFrequentItemSet()
         getFrequentFromCandidate(k);
     }
 
+    WriteFrequentItems* write_helper = new WriteFrequentItems(m_output_filename);
+    for(auto freq_item : m_freq_lists)
+    {
+        write_helper->printItems(freq_item);
+    }
+    delete write_helper;
 }
 
 inline void AprioriHandler::initPass()
