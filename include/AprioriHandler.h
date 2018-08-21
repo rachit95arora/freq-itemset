@@ -101,7 +101,16 @@ inline void AprioriHandler::initPass()
                 {
                     seen_integers.insert(element);
                     vector<int> new_candidate_vector = { element };
-                    m_cand_lists[0].emplace_back(new_candidate_vector, 0);
+                    m_cand_lists[0].emplace_back(new_candidate_vector, 1);
+                }
+                else
+                {
+                    vector<int> candidate_vector = { element };
+                    for(auto elem : m_cand_lists[0])
+                    {
+                        if(elem.first == candidate_vector)
+                            ++elem.second;
+                    }
                 }
             }
         }

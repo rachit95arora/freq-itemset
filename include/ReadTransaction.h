@@ -47,10 +47,6 @@ public:
                 current_position = next_line.find(' ', last_position);
             }
 
-            next.push_back(stoi(next_line.substr(
-                            last_position,
-                            (min(current_position, next_line.size())-last_position + 1)
-                            )));
             return next_line.size();
         }
     }
