@@ -44,7 +44,7 @@ void AprioriHandler::generateFrequentItemSet()
         vector<int> next_transaction;
         while(read_helper->nextTransaction(next_transaction) > 0)
         {
-            for(candidate current : (m_cand_lists[k]))
+            for(candidate& current : (m_cand_lists[k]))
             {
                 bool current_present = true;
                 vector<int> candidate_vector = current.first;
@@ -135,24 +135,40 @@ void AprioriHandler::generateCandidates(int index)
             int left = 0, right = 0, merged = 0;
             vector<int> left_f = m_freq_lists[index-1][i].first;
             vector<int> right_f = m_freq_lists[index-1][j].first;
-            for(int merged = 0; merged<=index; merged++) // WARNING: Makes implicit sorted assumption
+            while((merged<=index) && (left<index) && (right<index)) // WARNING: Makes implicit sorted assumption
             {
-                if(left_f[left] == right_f[right]) // Element match
+
+                if (left_f[left] == right_f[right]) // Element match
                 {
                     next_candidate_vector.push_back(left_f[left]);
                     ++left;
                     ++right;
+                    ++merged;
                 }
-                else if(left_f[left] < right_f[right])
+                else if (left_f[left] < right_f[right])
                 {
                     next_candidate_vector.push_back(left_f[left]);
                     ++left;
+                    ++merged;
                 }
                 else
                 {
                     next_candidate_vector.push_back(right_f[right]);
                     ++right;
+                    ++merged;
                 }
+            }
+            while((merged<=index) && (left<index)) // WARNING: Makes implicit sorted assumption
+            {
+                next_candidate_vector.push_back(left_f[left]);
+                ++left;
+                ++merged;
+            }
+            while((merged<=index) && (right<index)) // WARNING: Makes implicit sorted assumption
+            {
+                next_candidate_vector.push_back(right_f[right]);
+                ++right;
+                ++merged;
             }
             if((left<index) || (right<index)) // Multiple mismatches, continue
             {
@@ -168,14 +184,22 @@ void AprioriHandler::generateCandidates(int index)
                 {
                     vector<int> possible_subset = m_freq_lists[index-1][j].first;
                     int k=0;
+                    bool matches = true;
                     while(k<index)
                     {
-                        if(((k<index) && (possible_subset[k] != next_candidate_vector[k]))
-                            || ((k>=index) && (possible_subset[k] != next_candidate_vector[k+1])))
-                            continue;
+                        if(((k<i) && (possible_subset[k] != next_candidate_vector[k]))
+                            || ((k>=i) && (possible_subset[k] != next_candidate_vector[k+1])))
+                        {
+                            matches = false;
+                            break;
+                        }
+                        ++k;
                     }
-                    prune = false;
-                    break;
+                    if(matches)
+                    {
+                        prune = false;
+                        break;
+                    }
                 }
                 if(prune)
                     break;
@@ -201,7 +225,7 @@ inline void AprioriHandler::getFrequentFromCandidate(int index)
     {
         m_freq_lists.resize(index+1);
     }
-    for(candidate next: m_cand_lists[index])
+    for(candidate& next: m_cand_lists[index])
     {
         if(next.second/((double) m_total_transactions) >= m_min_support) // Qualifies as frequent
         {
