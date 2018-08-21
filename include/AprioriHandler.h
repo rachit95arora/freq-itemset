@@ -105,10 +105,9 @@ inline void AprioriHandler::initPass()
                 }
                 else
                 {
-                    vector<int> candidate_vector = { element };
-                    for(auto elem : m_cand_lists[0])
+                    for(auto& elem : m_cand_lists[0])
                     {
-                        if(elem.first == candidate_vector)
+                        if(elem.first[0] == element)
                             ++elem.second;
                     }
                 }
