@@ -16,7 +16,7 @@ public:
         m_db.open(filepath);
         if (!m_db)
         {
-            cerr<< "ReadTransaction() : Input file " + filepath + " could not be opened!\n";
+            cerr<< "[ERROR] ReadTransaction() : Input file " + filepath + " could not be opened!\n";
             exit(1);
         }
     }
