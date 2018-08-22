@@ -10,9 +10,14 @@ class ReadTransaction
 {
 private:
     ifstream m_db;
+    string m_filepath;
 
-public:
-    ReadTransaction(string filepath)
+    void openFile()
+    {
+        openFile(m_filepath);
+    }
+
+    void openFile(string filepath)
     {
         m_db.open(filepath);
         if (!m_db)
@@ -20,11 +25,29 @@ public:
             cerr<< "[ERROR] ReadTransaction() : Input file " + filepath + " could not be opened!\n";
             exit(1);
         }
+        m_filepath = filepath;
+    }
+
+    void closeFile()
+    {
+        m_db.close();
+    }
+
+public:
+    ReadTransaction(string filepath)
+    {
+        openFile(filepath);
     }
 
     ~ReadTransaction()
     {
-        m_db.close();
+        closeFile();
+    }
+
+    void resetHead()
+    {
+        closeFile();
+        openFile();
     }
 
     size_t nextTransaction(vector<int>& next)
@@ -45,6 +68,10 @@ public:
                 next.push_back(stoi(next_line.substr(last_position, current_position-last_position)));
                 last_position = current_position + 1;
                 current_position = next_line.find(' ', last_position);
+            }
+            if (last_position < next_line.size())
+            {
+                next.push_back(stoi(next_line.substr(last_position)));
             }
 
             return next_line.size();

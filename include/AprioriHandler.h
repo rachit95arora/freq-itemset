@@ -20,12 +20,12 @@ private:
     void getFrequentFromCandidate(int index);
 public:
 
-    AprioriHandler(string input_file, string output_file, double min_support)
+    AprioriHandler(string input_file, string output_file, double min_support):
+        m_input_filename(input_file),
+        m_output_filename(output_file),
+        m_min_support(min_support),
+        m_total_transactions(0)
     {
-        m_input_filename = input_file;
-        m_output_filename = output_file;
-        m_min_support = min_support;
-        m_total_transactions = 0;
         m_cand_lists.clear();
         m_freq_lists.clear();
     }
