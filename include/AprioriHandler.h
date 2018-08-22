@@ -1,6 +1,7 @@
 #ifndef APRIORI_HANDLER_H
 #define APRIORI_HANDLER_H
 
+#include <functional>
 #include <string>
 #include <vector>
 #include <iostream>
