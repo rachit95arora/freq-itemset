@@ -7,6 +7,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <list>
+#include <stack>
 using namespace std;
 
 #include "ReadTransaction.h"
@@ -149,12 +150,57 @@ private:
         }
         
         delete read_helper;
+    }
 
-        for (auto& iter : m_fptree->m_tree_index)
+    void createShadowTree(stack<FPNode*> &dfs_stack, FPTree* new_tree)
+    {
+        while(!dfs_stack.empty())
         {
-            auto li = iter.second.begin();
-            cerr<<(iter.first)<<' '<<((*li)->m_id)<<' '<<((*li)->m_count)<<endl;
-        }cerr<<endl;
+
+        }
+    }
+
+    void fpGrowth(FPTree* fptree, vector<vector<int>> & freq_set)
+    {
+        auto& tree_index = fptree->m_tree_index;
+        if(tree_index.size() == 0) //Empty Tree
+        {
+            return;
+        }
+        int minarg, mincount = INT_MAX;
+        for(auto& iter : tree_index)
+        {
+            int iter_count = ((*(iter.second.begin()))->m_count);
+            int iter_arg = ((*(iter.second.begin()))->m_id);
+            if((iter_count < mincount) || ((iter_count == mincount) && (iter_arg > minarg)))
+            {
+                if((((double)iter_count)/m_total_transactions) >= m_min_support)
+                {
+                    minarg = iter_arg;
+                    mincount = iter_count;
+                }
+            }
+        }
+
+        auto min_node_list = tree_index[minarg];
+        FPTree* new_tree = new FPTree();
+        auto node = min_node_list.begin();
+        stack<FPNode*> dfs_stack;
+        while(++node != min_node_list.end())
+        {
+            dfs_stack.push(*node);
+        }
+
+        createShadowTree(dfs_stack, new_tree);
+        vector<vector<int>> new_set;
+        fpGrowth(new_tree, new_set);
+        for(auto& pat_set : new_set)
+        {
+            pat_set.push_back(minarg);
+            freq_set.push_back(pat_set);
+        }
+        vector<int> singleton = { minarg };
+        freq_set.push_back(singleton);
     }
 
 public:
@@ -165,7 +211,18 @@ public:
         m_total_transactions(0),
         m_total_ids(0)
     {
+    }
+
+    void generateFrequentItemSet()
+    {
         generateMainFpTree();
+        vector<vector<int> > freq_set;
+        fpGrowth(m_fptree, freq_set);
+
+        WriteFrequentItems* write_helper = new WriteFrequentItems(m_output_filename);
+        write_helper->printItems(freq_set);
+        delete write_helper;
+
     }
 
     ~FPHandler()

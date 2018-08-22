@@ -97,6 +97,19 @@ public:
     {
         m_outfile.close();
     }
+
+    void printItems(vector<vector<int> > &freq_items)
+    {
+        for(auto item : freq_items)
+        {
+            for(int i = 0 ; i<item.size()-1; i++)
+            {
+                m_outfile<<item[i]<<' ';
+            }
+            m_outfile<<item[item.size()-1]<<endl;
+        }
+    }
+
     void printItems(vector<candidate> &freq_items)
     {
         for(auto item : freq_items)
