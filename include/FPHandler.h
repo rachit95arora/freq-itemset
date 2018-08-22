@@ -19,19 +19,19 @@ struct FPNode
     list<FPNode*> m_children;
     FPNode* m_auxillary;
     FPNode():
-        m_parent(nullptr),
-        m_auxillary(nullptr),
         m_id(0),
-        m_count(0)
+        m_count(0),
+        m_parent(nullptr),
+        m_auxillary(nullptr)
     {
         m_children.clear();
     }
 
     FPNode(const FPNode* original):
-        m_parent(original->m_parent),
-        m_auxillary(original->m_auxillary),
         m_id(original->m_id),
-        m_count(original->m_count)
+        m_count(original->m_count),
+        m_parent(original->m_parent),
+        m_auxillary(original->m_auxillary)
     {
         m_children.clear();
     }
@@ -58,6 +58,20 @@ struct FPTree
             }
             el->second.clear();
         }
+    }
+
+    void printTree()
+    {
+        cerr<<"Printing tree -------------------\n";
+        for (auto& iter : m_tree_index)
+        {
+            cerr<<"id : "<<iter.first;
+            auto& index_list = iter.second;
+            cerr<<" check id : "<<(*index_list.begin())->m_id;
+            cerr<<" count : "<<(*index_list.begin())->m_count;
+            cerr<<" index length : "<<index_list.size()<<endl;
+        }
+        cerr<<"Print complete ------------------\n";
     }
 };
 
@@ -158,6 +172,18 @@ private:
             transaction.clear();
         }
         
+        // Update index node counts in new_tree
+        auto& tree_index = m_fptree->m_tree_index;
+        for (auto iter : tree_index)
+        {
+            auto& total_count = (*iter.second.begin())->m_count;
+            total_count = 0;
+            auto node_iter = iter.second.begin();
+            while(++node_iter != iter.second.end())
+            {
+                total_count += (*node_iter)->m_count;
+            }
+        }
         delete read_helper;
     }
 
@@ -252,6 +278,7 @@ private:
                 auto node = node_list.begin();
                 stack<FPNode*> dfs_stack;
                 list<FPNode*> delete_list;
+                delete_list.clear();
                 while(++node != node_list.end())
                 {
                     FPNode* copy = new FPNode(*node);
@@ -262,9 +289,9 @@ private:
 
                 createShadowTree(dfs_stack, new_tree);
 
-                for( auto node: delete_list )
+                for( auto del_node = delete_list.begin(); del_node != delete_list.end(); del_node++)
                 {
-                    delete node;
+                    delete *del_node;
                 }
                 delete_list.clear();
                 vector<vector<int>> new_set;
@@ -294,10 +321,14 @@ public:
 
     void generateFrequentItemSet()
     {
+        cerr<<"FPHandler.h : Generating main fp tree\n";
         generateMainFpTree();
+        m_fptree->printTree();
         vector<vector<int> > freq_set;
+        cerr<<"FPHandler.h : Running fpgrowth on main tree\n";
         fpGrowth(m_fptree, freq_set);
 
+        cerr<<"FPHandler.h : Writing output\n";
         WriteFrequentItems* write_helper = new WriteFrequentItems(m_output_filename);
         write_helper->printItems(freq_set);
         delete write_helper;
