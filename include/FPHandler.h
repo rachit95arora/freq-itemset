@@ -26,6 +26,15 @@ struct FPNode
     {
         m_children.clear();
     }
+
+    FPNode(const FPNode* original):
+        m_parent(original->m_parent),
+        m_auxillary(original->m_auxillary),
+        m_id(original->m_id),
+        m_count(original->m_count)
+    {
+        m_children.clear();
+    }
 };
 
 struct FPTree
@@ -152,11 +161,74 @@ private:
         delete read_helper;
     }
 
+    FPNode* createShadowNode(FPNode* shadow_child, FPTree* shadow_tree)
+    {
+        FPNode* original = shadow_child->m_parent;
+        bool created = false;
+        if (original->m_auxillary) //Shadow Parent already exists
+        {
+            original->m_auxillary->m_count+=shadow_child->m_count;
+            shadow_child->m_parent = original->m_auxillary;
+        }
+        else
+        {
+            created = true;
+            FPNode* copy = new FPNode(original);
+            copy->m_count = shadow_child->m_count;
+            copy->m_auxillary = original;
+            original->m_auxillary = copy;
+            shadow_child->m_parent = copy;
+            auto& tree_index = shadow_tree->m_tree_index;
+            if(tree_index.find(copy->m_id) == tree_index.end())
+            {
+                list<FPNode*> nodel;
+                FPNode* index_node = new FPNode();
+                index_node->m_id = copy->m_id;
+                nodel.push_back(index_node);
+                nodel.push_back(copy);
+                tree_index.emplace(copy->m_id, nodel);
+            }
+            else
+            {
+                tree_index[copy->m_id].push_back(copy);
+            }
+        }
+        shadow_child->m_auxillary->m_auxillary = nullptr; // Reset original node's auxillary
+        shadow_child->m_auxillary = nullptr;              // Reset shadow node's auxillary
+
+        return created?(original->m_auxillary):nullptr;
+    }
+
     void createShadowTree(stack<FPNode*> &dfs_stack, FPTree* new_tree)
     {
         while(!dfs_stack.empty())
         {
+            auto node = dfs_stack.top();
+            dfs_stack.pop();
+            if((node->m_parent) && (node->m_parent->m_count > 0))
+            {
+                // Create shadow copy of parent               
+                auto new_parent = createShadowNode(node, new_tree);
+                if(new_parent)
+                    dfs_stack.push(new_parent);
+            }
+            else if(node->m_parent) // Parent is null node
+            {
+                node->m_parent = new_tree->m_root;
+            }
+        }
 
+        // Update index node counts in new_tree
+        auto& tree_index = new_tree->m_tree_index;
+        for (auto iter : tree_index)
+        {
+            auto& total_count = (*iter.second.begin())->m_count;
+            total_count = 0;
+            auto node_iter = iter.second.begin();
+            while(++node_iter != iter.second.end())
+            {
+                total_count += (*node_iter)->m_count;
+            }
         }
     }
 
@@ -167,40 +239,47 @@ private:
         {
             return;
         }
-        int minarg, mincount = INT_MAX;
+
         for(auto& iter : tree_index)
         {
             int iter_count = ((*(iter.second.begin()))->m_count);
             int iter_arg = ((*(iter.second.begin()))->m_id);
-            if((iter_count < mincount) || ((iter_count == mincount) && (iter_arg > minarg)))
+
+            if((((double)iter_count)/m_total_transactions) >= m_min_support)
             {
-                if((((double)iter_count)/m_total_transactions) >= m_min_support)
+                auto node_list = tree_index[iter_arg];
+                FPTree* new_tree = new FPTree();
+                auto node = node_list.begin();
+                stack<FPNode*> dfs_stack;
+                list<FPNode*> delete_list;
+                while(++node != node_list.end())
                 {
-                    minarg = iter_arg;
-                    mincount = iter_count;
+                    FPNode* copy = new FPNode(*node);
+                    copy->m_auxillary = copy;
+                    dfs_stack.push(copy);
+                    delete_list.push_back(copy);
                 }
+
+                createShadowTree(dfs_stack, new_tree);
+
+                for( auto node: delete_list )
+                {
+                    delete node;
+                }
+                delete_list.clear();
+                vector<vector<int>> new_set;
+                fpGrowth(new_tree, new_set);
+                for(auto& pat_set : new_set)
+                {
+                    pat_set.push_back(iter_arg);
+                    freq_set.push_back(pat_set);
+                }
+                vector<int> singleton = { iter_arg };
+                freq_set.push_back(singleton);
+                delete new_tree;
             }
         }
 
-        auto min_node_list = tree_index[minarg];
-        FPTree* new_tree = new FPTree();
-        auto node = min_node_list.begin();
-        stack<FPNode*> dfs_stack;
-        while(++node != min_node_list.end())
-        {
-            dfs_stack.push(*node);
-        }
-
-        createShadowTree(dfs_stack, new_tree);
-        vector<vector<int>> new_set;
-        fpGrowth(new_tree, new_set);
-        for(auto& pat_set : new_set)
-        {
-            pat_set.push_back(minarg);
-            freq_set.push_back(pat_set);
-        }
-        vector<int> singleton = { minarg };
-        freq_set.push_back(singleton);
     }
 
 public:

@@ -1,4 +1,4 @@
-# apriori-freq-itemset
+# freq-itemset
 
 Implementation of:
 * Apriori Algorithm
