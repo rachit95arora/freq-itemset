@@ -39,6 +39,10 @@ The project contains the following files and folders:
 * As minimal support percentage is increased both algorithms are able to reject more candidates and hence run faster.
 * Infact, with 90% min support the provided transaction file produces no frequent item set.
 
+## Team Members
+* Rachit Arora - 2014CS50292
+* Akshit Goyal - 2014CS50278
+* Nikhil Gupta - 2014CS50462
 
 ## Usage
 * Compilation: `sh compile.sh`
