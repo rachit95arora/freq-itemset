@@ -327,6 +327,7 @@ private:
             // New projected tree
             FPTree* proj_tree = new FPTree();
             fillProjectedTree(proj_tree, node_list);
+            proj_tree->printTree();
             vector<vector<int>> new_set;
             fpGrowth(proj_tree, new_set);
             for( auto& pat : new_set )
@@ -357,7 +358,7 @@ public:
         m_fptree->printTree();
         vector<vector<int> > freq_set;
         cerr<<"FPHandler.h : Running fpgrowth on main tree\n";
-        // fpGrowth(m_fptree, freq_set);
+        fpGrowth(m_fptree, freq_set);
 
         cerr<<"FPHandler.h : Writing output\n";
         WriteFrequentItems* write_helper = new WriteFrequentItems(m_output_filename);
