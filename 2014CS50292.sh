@@ -6,7 +6,8 @@ MODE="$3"
 OUTPUT_FILE="$4"
 TIME_FILE="$(dirname $0)/timings.txt"
 PLOT_FILE="$(dirname $0)/plot_timings.py"
-if [[ "$SUPPORT" = "-plot" ]]; then
+
+if [ "$SUPPORT" = "-plot" ]; then
     MODE="-plot"
 fi
 case "${MODE}" in
