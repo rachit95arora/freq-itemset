@@ -2,6 +2,7 @@
 #define FP_HANDLER_H
 
 #include <algorithm>
+#include <functional>
 #include <string>
 #include <vector>
 #include <iostream>
@@ -15,12 +16,14 @@ struct FPNode
 {
     int m_id;
     int m_count;
+    bool m_is_root;
     FPNode* m_parent;
     list<FPNode*> m_children;
     FPNode* m_auxillary;
     FPNode():
         m_id(0),
         m_count(0),
+        m_is_root(false),
         m_parent(nullptr),
         m_auxillary(nullptr)
     {
@@ -30,6 +33,7 @@ struct FPNode
     FPNode(const FPNode* original):
         m_id(original->m_id),
         m_count(original->m_count),
+        m_is_root(original->m_is_root),
         m_parent(original->m_parent),
         m_auxillary(original->m_auxillary)
     {
@@ -44,7 +48,7 @@ struct FPTree
     FPTree()
     {
         m_root = new FPNode();
-        m_root->m_count = -1; // Signifies null node
+        m_root->m_is_root = true; // Signifies null node
         m_tree_index.clear();
     }
     ~FPTree() // FPTree destruction will auto destruct all FPNodes in the tree
@@ -70,6 +74,11 @@ struct FPTree
             cerr<<" check id : "<<(*index_list.begin())->m_id;
             cerr<<" count : "<<(*index_list.begin())->m_count;
             cerr<<" index length : "<<index_list.size()<<endl;
+            auto it = index_list.begin();
+            while(++it != index_list.end())
+            {
+                cerr<<(*it)->m_id<<" "<<(*it)->m_parent->m_id<<endl;
+            }
         }
         cerr<<"Print complete ------------------\n";
     }
@@ -187,65 +196,79 @@ private:
         delete read_helper;
     }
 
-    FPNode* createShadowNode(FPNode* shadow_child, FPTree* shadow_tree)
+    void fillProjectedTree(FPTree* proj_tree, list<FPNode*>& node_list)
     {
-        FPNode* original = shadow_child->m_parent;
-        bool created = false;
-        if (original->m_auxillary) //Shadow Parent already exists
+        auto& tree_index = proj_tree->m_tree_index;
+        auto iter = node_list.begin();
+        // Skip index node
+        while(++iter != node_list.end()) // Process and copy each branch till top
         {
-            original->m_auxillary->m_count+=shadow_child->m_count;
-            shadow_child->m_parent = original->m_auxillary;
-        }
-        else
-        {
-            created = true;
-            FPNode* copy = new FPNode(original);
-            copy->m_count = shadow_child->m_count;
-            copy->m_auxillary = original;
-            original->m_auxillary = copy;
-            shadow_child->m_parent = copy;
-            auto& tree_index = shadow_tree->m_tree_index;
-            if(tree_index.find(copy->m_id) == tree_index.end())
+            auto node = *iter;
+            while(node)
             {
-                list<FPNode*> nodel;
-                FPNode* index_node = new FPNode();
-                index_node->m_id = copy->m_id;
-                nodel.push_back(index_node);
-                nodel.push_back(copy);
-                tree_index.emplace(copy->m_id, nodel);
-            }
-            else
-            {
-                tree_index[copy->m_id].push_back(copy);
-            }
-        }
-        shadow_child->m_auxillary->m_auxillary = nullptr; // Reset original node's auxillary
-        shadow_child->m_auxillary = nullptr;              // Reset shadow node's auxillary
+                if(!node->m_parent)
+                {
+                    cerr<<"[ERROR] FPHandler.h : fillProjectedTree() - Non root node has no parent!";
+                    exit(0);
+                }
+                else if(node->m_parent->m_is_root)
+                {
+                    if(node->m_auxillary)
+                    {
+                        node->m_auxillary = proj_tree->m_root;
+                    }
+                    node = nullptr;
+                    continue;
+                }
 
-        return created?(original->m_auxillary):nullptr;
-    }
+                if(node->m_parent->m_auxillary) // Already copied
+                {
+                   if(node->m_auxillary)
+                   {
+                       node->m_parent->m_auxillary->m_count += node->m_auxillary->m_count;
+                       node->m_auxillary->m_parent = node->m_parent->m_auxillary;
+                   }
+                   else
+                   {
+                       node->m_parent->m_auxillary->m_count = node->m_count;
+                   }
+                   node = node->m_parent;
+                }
+                else
+                {
+                    FPNode* parent_copy = new FPNode(node->m_parent);
+                    parent_copy->m_auxillary = node->m_parent;
+                    node->m_parent->m_auxillary = parent_copy;
+                    if(node->m_auxillary) // Self has a copy
+                    {
+                        parent_copy->m_count = node->m_auxillary->m_count;
+                        node->m_auxillary->m_parent = parent_copy;
+                    }
+                    else
+                    {
+                        parent_copy->m_count = node->m_count;
+                    }
+                    // Add parent copy to projected tree index
+                    if (tree_index.find(parent_copy->m_id) != tree_index.end())
+                    {
+                        tree_index[parent_copy->m_id].push_back(parent_copy);
+                    }
+                    else // Add index node too
+                    {
+                        FPNode* index_node = new FPNode();
+                        index_node->m_id = parent_copy->m_id;
+                        list<FPNode*> index_list;
+                        index_list.push_back(index_node);
+                        index_list.push_back(parent_copy);
+                        tree_index.emplace(parent_copy->m_id, index_list);
+                    }
 
-    void createShadowTree(stack<FPNode*> &dfs_stack, FPTree* new_tree)
-    {
-        while(!dfs_stack.empty())
-        {
-            auto node = dfs_stack.top();
-            dfs_stack.pop();
-            if((node->m_parent) && (node->m_parent->m_count > 0))
-            {
-                // Create shadow copy of parent               
-                auto new_parent = createShadowNode(node, new_tree);
-                if(new_parent)
-                    dfs_stack.push(new_parent);
+                }
             }
-            else if(node->m_parent) // Parent is null node
-            {
-                node->m_parent = new_tree->m_root;
-            }
+
         }
 
-        // Update index node counts in new_tree
-        auto& tree_index = new_tree->m_tree_index;
+        // Update projected tree index nodes
         for (auto iter : tree_index)
         {
             auto& total_count = (*iter.second.begin())->m_count;
@@ -256,57 +279,65 @@ private:
                 total_count += (*node_iter)->m_count;
             }
         }
+
+        // Remove auxillary linkings from all nodes
+        iter = node_list.begin();
+        // Skip index node
+        while(++iter != node_list.end())
+        {
+            auto node = *iter;
+            while(node)
+            {
+                if(node->m_is_root)
+                {
+                    node = nullptr;
+                    continue;
+                }
+                else
+                {
+                    if(node->m_auxillary)
+                        node->m_auxillary->m_auxillary = nullptr;
+                    node->m_auxillary = nullptr;
+                    node = node->m_parent;
+                }
+            }
+        }
     }
 
     void fpGrowth(FPTree* fptree, vector<vector<int>> & freq_set)
     {
-        auto& tree_index = fptree->m_tree_index;
-        if(tree_index.size() == 0) //Empty Tree
+        if(fptree->m_tree_index.empty()) // Base Case
         {
             return;
         }
 
-        for(auto& iter : tree_index)
+        // Recursively call fpGrowth with projected tree
+        // For each element in tree index
+        for (auto iter : fptree->m_tree_index)
         {
-            int iter_count = ((*(iter.second.begin()))->m_count);
-            int iter_arg = ((*(iter.second.begin()))->m_id);
+            int id = iter.first;
+            auto& node_list = iter.second;
+            int count = (*node_list.begin())->m_count;
 
-            if((((double)iter_count)/m_total_transactions) >= m_min_support)
+            if ((((double)count)/m_total_transactions) < m_min_support)
             {
-                auto node_list = tree_index[iter_arg];
-                FPTree* new_tree = new FPTree();
-                auto node = node_list.begin();
-                stack<FPNode*> dfs_stack;
-                list<FPNode*> delete_list;
-                delete_list.clear();
-                while(++node != node_list.end())
-                {
-                    FPNode* copy = new FPNode(*node);
-                    copy->m_auxillary = copy;
-                    dfs_stack.push(copy);
-                    delete_list.push_back(copy);
-                }
-
-                createShadowTree(dfs_stack, new_tree);
-
-                for( auto del_node = delete_list.begin(); del_node != delete_list.end(); del_node++)
-                {
-                    delete *del_node;
-                }
-                delete_list.clear();
-                vector<vector<int>> new_set;
-                fpGrowth(new_tree, new_set);
-                for(auto& pat_set : new_set)
-                {
-                    pat_set.push_back(iter_arg);
-                    freq_set.push_back(pat_set);
-                }
-                vector<int> singleton = { iter_arg };
-                freq_set.push_back(singleton);
-                delete new_tree;
+                continue; // Skip because insufficient support
             }
-        }
 
+            // New projected tree
+            FPTree* proj_tree = new FPTree();
+            fillProjectedTree(proj_tree, node_list);
+            vector<vector<int>> new_set;
+            fpGrowth(proj_tree, new_set);
+            for( auto& pat : new_set )
+            {
+                pat.push_back(id);
+                freq_set.push_back(pat);
+            }
+            // Push singleton id
+            freq_set.push_back(vector<int> (1, id));
+            delete proj_tree;
+        }
     }
 
 public:
@@ -326,7 +357,7 @@ public:
         m_fptree->printTree();
         vector<vector<int> > freq_set;
         cerr<<"FPHandler.h : Running fpgrowth on main tree\n";
-        fpGrowth(m_fptree, freq_set);
+        // fpGrowth(m_fptree, freq_set);
 
         cerr<<"FPHandler.h : Writing output\n";
         WriteFrequentItems* write_helper = new WriteFrequentItems(m_output_filename);
