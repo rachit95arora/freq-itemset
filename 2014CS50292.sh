@@ -5,7 +5,7 @@ SUPPORT="$2"
 MODE="$3"
 OUTPUT_FILE="$4"
 
-if [[ "$SUPPORT" = "-plot" ]]; then
+if [ "$SUPPORT" = "-plot" ]; then
     MODE="-plot"
 fi
 case "${MODE}" in
