@@ -5,7 +5,7 @@ CFLAGS= -O3
 INC=-I./include
 SRC=./src
 OBJ=bin
-EXE=apriori
+EXE=freq_itemset
 
 SRCFILES=$(addprefix $(OBJ)/, $(subst .c,.o, $(subst .cpp,.o, $(subst $(SRC)/,,$(wildcard $(SRC)/*)))))
 
