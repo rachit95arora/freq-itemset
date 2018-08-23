@@ -66,7 +66,7 @@ struct FPTree
 
     void printTree()
     {
-        cerr<<"Printing tree -------------------\n";
+        cerr<<"----------------Printing tree -------------------\n";
         for (auto& iter : m_tree_index)
         {
             cerr<<"id : "<<iter.first;
@@ -77,10 +77,9 @@ struct FPTree
             auto it = index_list.begin();
             while(++it != index_list.end())
             {
-                cerr<<(*it)->m_id<<" "<<(*it)->m_parent->m_id<<endl;
+                cerr<<(*it)->m_id<<" "<<(*it)->m_parent->m_id<<" c : "<<(*it)->m_count<<endl;
             }
         }
-        cerr<<"Print complete ------------------\n";
     }
 };
 
@@ -181,7 +180,7 @@ private:
             transaction.clear();
         }
         
-        // Update index node counts in new_tree
+        // Update index node counts in m_fptree
         auto& tree_index = m_fptree->m_tree_index;
         for (auto iter : tree_index)
         {
@@ -204,6 +203,7 @@ private:
         while(++iter != node_list.end()) // Process and copy each branch till top
         {
             auto node = *iter;
+            int original_count = node->m_count;
             while(node)
             {
                 if(!node->m_parent)
@@ -215,7 +215,7 @@ private:
                 {
                     if(node->m_auxillary)
                     {
-                        node->m_auxillary = proj_tree->m_root;
+                        node->m_auxillary->m_parent = proj_tree->m_root;
                     }
                     node = nullptr;
                     continue;
@@ -223,16 +223,12 @@ private:
 
                 if(node->m_parent->m_auxillary) // Already copied
                 {
-                   if(node->m_auxillary)
-                   {
-                       node->m_parent->m_auxillary->m_count += node->m_auxillary->m_count;
-                       node->m_auxillary->m_parent = node->m_parent->m_auxillary;
-                   }
-                   else
-                   {
-                       node->m_parent->m_auxillary->m_count = node->m_count;
-                   }
-                   node = node->m_parent;
+                    if(node->m_auxillary)
+                    {
+                        node->m_auxillary->m_parent = node->m_parent->m_auxillary;
+                    }
+                    node->m_parent->m_auxillary->m_count += original_count;
+                    node = node->m_parent;
                 }
                 else
                 {
@@ -241,13 +237,9 @@ private:
                     node->m_parent->m_auxillary = parent_copy;
                     if(node->m_auxillary) // Self has a copy
                     {
-                        parent_copy->m_count = node->m_auxillary->m_count;
                         node->m_auxillary->m_parent = parent_copy;
                     }
-                    else
-                    {
-                        parent_copy->m_count = node->m_count;
-                    }
+                    parent_copy->m_count = original_count;
                     // Add parent copy to projected tree index
                     if (tree_index.find(parent_copy->m_id) != tree_index.end())
                     {
@@ -262,7 +254,7 @@ private:
                         index_list.push_back(parent_copy);
                         tree_index.emplace(parent_copy->m_id, index_list);
                     }
-
+                    node = node->m_parent;
                 }
             }
 
@@ -327,6 +319,8 @@ private:
             // New projected tree
             FPTree* proj_tree = new FPTree();
             fillProjectedTree(proj_tree, node_list);
+            cerr<<"Working id : "<<id<<endl;
+            cerr<<"Working node length : "<<node_list.size()<<endl;
             proj_tree->printTree();
             vector<vector<int>> new_set;
             fpGrowth(proj_tree, new_set);
