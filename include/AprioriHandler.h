@@ -20,30 +20,31 @@ private:
     void generateCandidates(int index);
     void initPass();
     void getFrequentFromCandidate(int index);
+
 public:
-
-    AprioriHandler(string input_file, string output_file, double min_support):
-        m_input_filename(input_file),
-        m_output_filename(output_file),
-        m_min_support(min_support),
-        m_total_transactions(0)
-    {
-        m_cand_lists.clear();
-        m_freq_lists.clear();
-    }
-
+    AprioriHandler(string input_file, string output_file, double min_support);
     void generateFrequentItemSet();
 };
 
-void AprioriHandler::generateFrequentItemSet()
+////////////// Implementation ///////////////////////////
+
+inline AprioriHandler::AprioriHandler(string input_file, string output_file, double min_support):
+    m_input_filename(input_file),
+    m_output_filename(output_file),
+    m_min_support(min_support),
+    m_total_transactions(0)
+{
+    m_cand_lists.clear();
+    m_freq_lists.clear();
+}
+
+inline void AprioriHandler::generateFrequentItemSet()
 {
     initPass();
     getFrequentFromCandidate(0);
     for(int k=1; m_freq_lists[k-1].size()>0; k++)
     {
         generateCandidates(k);
-        if(k==2)
-            cerr<<"size is "<<m_cand_lists[k].size()<<endl; 
         ReadTransaction* read_helper = new ReadTransaction(m_input_filename);
         vector<int> next_transaction;
         while(read_helper->nextTransaction(next_transaction) > 0)
@@ -123,7 +124,7 @@ inline void AprioriHandler::initPass()
     delete read_helper;
 }
 
-void AprioriHandler::generateCandidates(int index)
+inline void AprioriHandler::generateCandidates(int index)
 {
     if( index + 1 > m_cand_lists.size())
     {
