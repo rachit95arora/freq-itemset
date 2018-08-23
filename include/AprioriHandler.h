@@ -6,6 +6,7 @@
 #include <vector>
 #include <iostream>
 #include <unordered_set>
+#include <set>
 using namespace std;
 
 #include "ReadTransaction.h"
@@ -41,6 +42,8 @@ void AprioriHandler::generateFrequentItemSet()
     for(int k=1; m_freq_lists[k-1].size()>0; k++)
     {
         generateCandidates(k);
+        if(k==2)
+            cerr<<"size is "<<m_cand_lists[k].size()<<endl; 
         ReadTransaction* read_helper = new ReadTransaction(m_input_filename);
         vector<int> next_transaction;
         while(read_helper->nextTransaction(next_transaction) > 0)
@@ -126,6 +129,7 @@ void AprioriHandler::generateCandidates(int index)
     {
         m_cand_lists.resize(index+1);
     }
+    set<vector<int>> next_candidate_set;
     for(int i = 0; i<m_freq_lists[index-1].size(); i++)
     {
         for(int j = i+1; j<m_freq_lists[index-1].size(); j++)
@@ -209,9 +213,11 @@ void AprioriHandler::generateCandidates(int index)
             {
                 continue;
             }
-
+            int si_prev = next_candidate_set.size();
+            next_candidate_set.insert(next_candidate_vector);
+            if(next_candidate_set.size()>si_prev)
             // next_candidate_vector fit for addition
-            m_cand_lists[index].emplace_back(next_candidate_vector, 0);
+                m_cand_lists[index].emplace_back(next_candidate_vector, 0);
         }
     }
 }

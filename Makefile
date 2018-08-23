@@ -1,6 +1,6 @@
 CC=g++ -std=c++11
-# CFLAGS= -O3
-CFLAGS= -g
+CFLAGS= -O3
+# CFLAGS= -g
 
 INC=-I./include
 SRC=./src
