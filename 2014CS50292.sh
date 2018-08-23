@@ -38,6 +38,9 @@ case "${MODE}" in
         { \time -f "%E" ./freq_itemset "$INPUT_FILE" "$RANDOM_FILE" 90 1; } 2>> "$TIME_FILE"
         rm -f "$RANDOM_FILE"
         python "${PLOT_FILE}" "${TIME_FILE}"
+
+        echo "[$(basename $0)] Plot comparing apriori and fptree timings saved"
+        echo "[$(basename $0)] Location $(dirname $0)/plot.png"
         ;;
     *)
         echo "[$(basename $0)] Invalid mode option. Exiting"
