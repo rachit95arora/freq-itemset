@@ -20,6 +20,16 @@ The project contains the following files and folders:
 * **src**            : c++ source file directory
   * Main.cpp          -> Entry point. Uses handler header files in include  
 
+## Usage
+* Compilation: `sh compile.sh`
+* Run:
+  * Apriori: `sh 2014CS50292.sh input-file support% -apriori output-file`
+  * FPTree : `sh 2014CS50292.sh input-file support% -fptree output-file`
+  * Plotting relative performance
+      ```
+      sh 2014CS50292.sh input-file -plot
+      ```
+
 ## Observations
 
 ### Faster runs of FPTree in comparison to Apriori
@@ -38,20 +48,3 @@ The project contains the following files and folders:
   checking their support value.
 * As minimal support percentage is increased both algorithms are able to reject more candidates and hence run faster.
 * Infact, with 90% min support the provided transaction file produces no frequent item set.
-
-## Team Members
-* Rachit Arora - 2014CS50292
-* Akshit Goyal - 2014CS50278
-* Nikhil Gupta - 2014CS50462
-
-## Usage
-* Compilation: `sh compile.sh`
-* Run:
-  * Apriori: `sh 2014CS50292.sh input-file support% -apriori output-file`
-  * FPTree : `sh 2014CS50292.sh input-file support% -fptree output-file`
-  * Plotting relative performance
-      ```
-      sh 2014CS50292.sh input-file -plot
-      ```
-
-
